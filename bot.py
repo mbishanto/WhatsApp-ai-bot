@@ -50,7 +50,7 @@ keys = os.getenv("GROQ_KEYS", "")
 GROQ_KEYS = keys.split(",") if keys else []
 
 gemini_keys = os.getenv("GEMINI_KEYS", "")
-GEMINI_KEYS = gemini_keys.split(",") if keys else []
+GEMINI_KEYS = gemini_keys.split(",") if gemini_keys else []
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -441,7 +441,12 @@ def whatsapp_webhook():
 
     except Exception as e:
 
-        print(e)
+        import traceback
+
+        print("ERROR:")
+        print(str(e))
+
+        traceback.print_exc()
 
         return "error", 500
 

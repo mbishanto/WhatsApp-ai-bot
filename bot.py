@@ -1,3 +1,4 @@
+```python id="dnt4jl"
 from flask import Flask, request
 from threading import Thread
 
@@ -335,11 +336,14 @@ def send_whatsapp_message(to, message):
         }
     }
 
-    requests.post(
+    response = requests.post(
         url,
         headers=headers,
         json=payload
     )
+
+    print(response.status_code)
+    print(response.text)
 
 # ================== WHATSAPP RECEIVE ==================
 
@@ -454,3 +458,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+```

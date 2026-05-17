@@ -1,4 +1,3 @@
-```python id="dnt4jl"
 from flask import Flask, request
 from threading import Thread
 
@@ -458,4 +457,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-```

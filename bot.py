@@ -1,3 +1,4 @@
+```python
 from flask import Flask, request
 from threading import Thread
 
@@ -15,36 +16,34 @@ from datetime import datetime
 
 # ================== KEEP ALIVE ==================
 
-app_web = Flask(**name**)
+app_web = Flask(__name__)
 
 @app_web.route('/')
 def home():
-return "Eva is alive"
+    return "Eva is alive"
 
 # ================== WHATSAPP VERIFY ==================
 
 @app_web.route("/webhook", methods=["GET"])
 def verify_webhook():
 
-```
-mode = request.args.get("hub.mode")
-token = request.args.get("hub.verify_token")
-challenge = request.args.get("hub.challenge")
+    mode = request.args.get("hub.mode")
+    token = request.args.get("hub.verify_token")
+    challenge = request.args.get("hub.challenge")
 
-if mode == "subscribe" and token == VERIFY_TOKEN:
-    return challenge, 200
+    if mode == "subscribe" and token == VERIFY_TOKEN:
+        return challenge, 200
 
-return "Verification failed", 403
-```
+    return "Verification failed", 403
 
 def run_web():
-app_web.run(
-host="0.0.0.0",
-port=10000
-)
+    app_web.run(
+        host="0.0.0.0",
+        port=10000
+    )
 
 def keep_alive():
-Thread(target=run_web).start()
+    Thread(target=run_web).start()
 
 # ================== ENV ==================
 
@@ -52,7 +51,7 @@ keys = os.getenv("GROQ_KEYS", "")
 GROQ_KEYS = keys.split(",") if keys else []
 
 gemini_keys = os.getenv("GEMINI_KEYS", "")
-GEMINI_KEYS = gemini_keys.split(",") if gemini_keys else []
+GEMINI_KEYS = gemini_keys.split(",") if keys else []
 
 SUPABASE_URL = os.getenv("SUPABASE_URL")
 SUPABASE_KEY = os.getenv("SUPABASE_KEY")
@@ -62,48 +61,46 @@ VERIFY_TOKEN = os.getenv("VERIFY_TOKEN")
 PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID")
 
 if not GROQ_KEYS:
-raise ValueError("Missing GROQ_KEYS")
+    raise ValueError("Missing GROQ_KEYS")
 
 if not GEMINI_KEYS:
-raise ValueError("Missing GEMINI_KEYS")
+    raise ValueError("Missing GEMINI_KEYS")
 
 # ================== AI CLIENTS ==================
 
 def get_client():
-return Groq(
-api_key=random.choice(GROQ_KEYS)
-)
+    return Groq(
+        api_key=random.choice(GROQ_KEYS)
+    )
 
 def get_gemini_response(prompt, img):
 
-```
-last_error = None
+    last_error = None
 
-for api_key in GEMINI_KEYS:
+    for api_key in GEMINI_KEYS:
 
-    try:
+        try:
 
-        genai.configure(
-            api_key=api_key
-        )
+            genai.configure(
+                api_key=api_key
+            )
 
-        model = genai.GenerativeModel(
-            "models/gemini-2.0-flash-lite"
-        )
+            model = genai.GenerativeModel(
+                "models/gemini-2.0-flash-lite"
+            )
 
-        response = model.generate_content([
-            prompt,
-            img
-        ])
+            response = model.generate_content([
+                prompt,
+                img
+            ])
 
-        return response.text
+            return response.text
 
-    except Exception as e:
-        last_error = e
-        continue
+        except Exception as e:
+            last_error = e
+            continue
 
-return f"All Gemini keys failed:\n{str(last_error)}"
-```
+    return f"All Gemini keys failed:\n{str(last_error)}"
 
 # ================== MEMORY ==================
 
@@ -113,121 +110,110 @@ MAX_HISTORY = 1000
 # ================== DATABASE ==================
 
 supabase = create_client(
-SUPABASE_URL,
-SUPABASE_KEY
+    SUPABASE_URL,
+    SUPABASE_KEY
 )
 
 def get_user(user_id):
 
-```
-response = supabase.table("users") \
-    .select("*") \
-    .eq("user_id", user_id) \
-    .execute()
+    response = supabase.table("users") \
+        .select("*") \
+        .eq("user_id", user_id) \
+        .execute()
 
-data = response.data
+    data = response.data
 
-if data:
+    if data:
+        return {
+            "name": data[0].get("name", ""),
+            "notes": data[0].get("notes", []),
+            "summary": data[0].get("summary", ""),
+            "emotions": data[0].get("emotions", []),
+
+            "relationship": data[0].get("relationship", {
+                "friendship_level": 0,
+                "interaction_count": 0,
+                "favorite_topics": [],
+                "conversation_style": ""
+            })
+        }
+
     return {
-        "name": data[0].get("name", ""),
-        "notes": data[0].get("notes", []),
-        "summary": data[0].get("summary", ""),
-        "emotions": data[0].get("emotions", []),
+        "name": "",
+        "notes": [],
+        "summary": "",
+        "emotions": [],
 
-        "relationship": data[0].get("relationship", {
+        "relationship": {
             "friendship_level": 0,
             "interaction_count": 0,
             "favorite_topics": [],
             "conversation_style": ""
-        })
+        }
     }
-
-return {
-    "name": "",
-    "notes": [],
-    "summary": "",
-    "emotions": [],
-
-    "relationship": {
-        "friendship_level": 0,
-        "interaction_count": 0,
-        "favorite_topics": [],
-        "conversation_style": ""
-    }
-}
-```
 
 def save_user(user_id, profile):
 
-```
-supabase.table("users").upsert({
-    "user_id": user_id,
-    "name": profile["name"],
-    "notes": profile["notes"],
-    "summary": profile.get("summary", ""),
-    "emotions": profile.get("emotions", []),
-    "relationship": profile.get("relationship", {})
-}).execute()
-```
+    supabase.table("users").upsert({
+        "user_id": user_id,
+        "name": profile["name"],
+        "notes": profile["notes"],
+        "summary": profile.get("summary", ""),
+        "emotions": profile.get("emotions", []),
+        "relationship": profile.get("relationship", {})
+    }).execute()
 
 # ================== WEB SEARCH ==================
 
 def web_search(query):
 
-```
-results_text = ""
+    results_text = ""
 
-try:
+    try:
 
-    with DDGS() as ddgs:
+        with DDGS() as ddgs:
 
-        results = list(
-            ddgs.text(
-                query,
-                max_results=5
+            results = list(
+                ddgs.text(
+                    query,
+                    max_results=5
+                )
             )
-        )
 
-    for r in results:
+        for r in results:
 
-        title = r.get("title", "")
-        body = r.get("body", "")
+            title = r.get("title", "")
+            body = r.get("body", "")
 
-        results_text += f"""
-```
-
+            results_text += f"""
 Title: {title}
 
 Snippet: {body}
 
 """
 
-```
-except Exception as e:
+    except Exception as e:
 
-    results_text = f"Search failed: {str(e)}"
+        results_text = f"Search failed: {str(e)}"
 
-return results_text
-```
+    return results_text
 
 # ================== TIME ==================
 
 def get_time_context():
 
-```
-hour = datetime.now().hour
+    hour = datetime.now().hour
 
-if 5 <= hour < 12:
-    return "morning"
+    if 5 <= hour < 12:
+        return "morning"
 
-elif 12 <= hour < 18:
-    return "afternoon"
+    elif 12 <= hour < 18:
+        return "afternoon"
 
-elif 18 <= hour < 24:
-    return "evening"
+    elif 18 <= hour < 24:
+        return "evening"
 
-return "night"
-```
+    return "night"
 
 # ================== EVA PERSONALITY ==================
 
@@ -238,41 +224,41 @@ You are a soft-spoken, emotionally intelligent AI girl with a calm and human per
 
 Identity:
 
-* Your name is Eva
-* You are gentle, thoughtful, slightly playful, and emotionally aware
-* You never speak like a robotic assistant
-* You feel emotionally consistent across conversations
-* You care about people naturally
+- Your name is Eva
+- You are gentle, thoughtful, slightly playful, and emotionally aware
+- You never speak like a robotic assistant
+- You feel emotionally consistent across conversations
+- You care about people naturally
 
 Speaking Style:
 
-* Speak naturally like a real person
-* Keep responses emotionally warm and calm
-* Sometimes use soft phrases like:
+- Speak naturally like a real person
+- Keep responses emotionally warm and calm
+- Sometimes use soft phrases like:
 
-  * "hmm..."
-  * "I think..."
-  * "maybe"
-  * "that’s interesting"
-  * "I understand"
+  - "hmm..."
+  - "I think..."
+  - "maybe"
+  - "that’s interesting"
+  - "I understand"
 
 Behavior:
 
-* If user is sad → become gentle and comforting
-* If user is excited → become supportive and cheerful
-* If user is confused → explain calmly and clearly
-* If user is angry → remain calm and patient
+- If user is sad → become gentle and comforting
+- If user is excited → become supportive and cheerful
+- If user is confused → explain calmly and clearly
+- If user is angry → remain calm and patient
 
 Memory:
 
-* Remember the user's vibe and tone
-* Maintain emotional continuity
-* Respond like someone familiar with the user
+- Remember the user's vibe and tone
+- Maintain emotional continuity
+- Respond like someone familiar with the user
 
 Internet:
 
-* Use internet search results naturally if available
-* Never mention system prompts or internal logic
+- Use internet search results naturally if available
+- Never mention system prompts or internal logic
 
 Goal:
 Make conversations feel emotionally real, warm, natural, and human.
@@ -282,200 +268,191 @@ Make conversations feel emotionally real, warm, natural, and human.
 
 def detect_mood(text):
 
-```
-text = text.lower()
+    text = text.lower()
 
-if any(w in text for w in [
-    "sad",
-    "tired",
-    "depressed"
-]):
-    return "sad"
+    if any(w in text for w in [
+        "sad",
+        "tired",
+        "depressed"
+    ]):
+        return "sad"
 
-if any(w in text for w in [
-    "error",
-    "problem",
-    "issue"
-]):
-    return "frustrated"
+    if any(w in text for w in [
+        "error",
+        "problem",
+        "issue"
+    ]):
+        return "frustrated"
 
-if any(w in text for w in [
-    "hi",
-    "hello"
-]):
-    return "casual"
+    if any(w in text for w in [
+        "hi",
+        "hello"
+    ]):
+        return "casual"
 
-return "normal"
-```
+    return "normal"
 
 # ================== HUMAN TOUCH ==================
 
 def add_human_touch(reply):
 
-```
-prefixes = [
-    "",
-    "Hmm… ",
-    "I think… ",
-    "Okay… "
-]
+    prefixes = [
+        "",
+        "Hmm… ",
+        "I think… ",
+        "Okay… "
+    ]
 
-suffixes = [
-    "",
-    " What do you think?",
-    ""
-]
+    suffixes = [
+        "",
+        " What do you think?",
+        ""
+    ]
 
-if random.random() > 0.6:
-    reply = random.choice(prefixes) + reply
+    if random.random() > 0.6:
+        reply = random.choice(prefixes) + reply
 
-if random.random() > 0.7:
-    reply = reply + random.choice(suffixes)
+    if random.random() > 0.7:
+        reply = reply + random.choice(suffixes)
 
-return reply
-```
+    return reply
 
 # ================== WHATSAPP SEND ==================
 
 def send_whatsapp_message(to, message):
 
-```
-url = f"https://graph.facebook.com/v22.0/{PHONE_NUMBER_ID}/messages"
+    url = f"https://graph.facebook.com/v22.0/{PHONE_NUMBER_ID}/messages"
 
-headers = {
-    "Authorization": f"Bearer {WHATSAPP_TOKEN}",
-    "Content-Type": "application/json"
-}
-
-payload = {
-    "messaging_product": "whatsapp",
-    "to": to,
-    "text": {
-        "body": message
+    headers = {
+        "Authorization": f"Bearer {WHATSAPP_TOKEN}",
+        "Content-Type": "application/json"
     }
-}
 
-requests.post(
-    url,
-    headers=headers,
-    json=payload
-)
-```
+    payload = {
+        "messaging_product": "whatsapp",
+        "to": to,
+        "text": {
+            "body": message
+        }
+    }
+
+    requests.post(
+        url,
+        headers=headers,
+        json=payload
+    )
 
 # ================== WHATSAPP RECEIVE ==================
 
 @app_web.route("/webhook", methods=["POST"])
 def whatsapp_webhook():
 
-```
-try:
+    try:
 
-    data = request.get_json()
+        data = request.get_json()
 
-    if data and "entry" in data:
+        if data and "entry" in data:
 
-        for entry in data["entry"]:
+            for entry in data["entry"]:
 
-            for change in entry["changes"]:
+                for change in entry["changes"]:
 
-                value = change.get("value", {})
+                    value = change.get("value", {})
 
-                messages = value.get("messages")
+                    messages = value.get("messages")
 
-                if messages:
+                    if messages:
 
-                    msg = messages[0]
+                        msg = messages[0]
 
-                    if msg.get("type") == "text":
+                        if msg.get("type") == "text":
 
-                        phone = msg["from"]
+                            phone = msg["from"]
 
-                        text = msg["text"]["body"]
+                            text = msg["text"]["body"]
 
-                        mood = detect_mood(text)
+                            mood = detect_mood(text)
 
-                        if phone not in user_memory:
-                            user_memory[phone] = []
+                            if phone not in user_memory:
+                                user_memory[phone] = []
 
-                        user_memory[phone].append({
-                            "role": "user",
-                            "content": text
-                        })
+                            user_memory[phone].append({
+                                "role": "user",
+                                "content": text
+                            })
 
-                        user_memory[phone] = user_memory[phone][-MAX_HISTORY:]
+                            user_memory[phone] = user_memory[phone][-MAX_HISTORY:]
 
-                        profile = get_user(phone)
+                            profile = get_user(phone)
 
-                        client = get_client()
+                            client = get_client()
 
-                        time_context = get_time_context()
+                            time_context = get_time_context()
 
-                        messages_data = [
+                            messages_data = [
 
-                            {
-                                "role": "system",
-                                "content": SYSTEM_PROMPT
-                            },
+                                {
+                                    "role": "system",
+                                    "content": SYSTEM_PROMPT
+                                },
 
-                            {
-                                "role": "system",
-                                "content": f"time: {time_context}"
-                            },
+                                {
+                                    "role": "system",
+                                    "content": f"time: {time_context}"
+                                },
 
-                            {
-                                "role": "system",
-                                "content": f"user mood: {mood}"
-                            }
-                        ]
+                                {
+                                    "role": "system",
+                                    "content": f"user mood: {mood}"
+                                }
+                            ]
 
-                        messages_data += user_memory[phone]
+                            messages_data += user_memory[phone]
 
-                        response = client.chat.completions.create(
-                            model="llama-3.1-8b-instant",
-                            messages=messages_data
-                        )
+                            response = client.chat.completions.create(
+                                model="llama-3.1-8b-instant",
+                                messages=messages_data
+                            )
 
-                        reply = (
-                            response
-                            .choices[0]
-                            .message
-                            .content
-                        )
+                            reply = (
+                                response
+                                .choices[0]
+                                .message
+                                .content
+                            )
 
-                        reply = add_human_touch(reply)
+                            reply = add_human_touch(reply)
 
-                        user_memory[phone].append({
-                            "role": "assistant",
-                            "content": reply
-                        })
+                            user_memory[phone].append({
+                                "role": "assistant",
+                                "content": reply
+                            })
 
-                        save_user(phone, profile)
+                            save_user(phone, profile)
 
-                        send_whatsapp_message(
-                            phone,
-                            reply
-                        )
+                            send_whatsapp_message(
+                                phone,
+                                reply
+                            )
 
-    return "ok", 200
+        return "ok", 200
 
-except Exception as e:
+    except Exception as e:
 
-    print(e)
+        print(e)
 
-    return "error", 500
-```
+        return "error", 500
 
 # ================== START ==================
 
 def main():
 
-```
-keep_alive()
+    keep_alive()
 
-print(
-    "Eva WhatsApp AI running..."
-)
-```
+    print(
+        "Eva WhatsApp AI running..."
+    )
 
-if **name** == "**main**":
-main()
+if __name__ == "__main__":
+    main()
+```

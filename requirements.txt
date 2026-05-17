@@ -1,0 +1,7 @@
+python-telegram-bot
+groq
+flask
+supabase
+duckduckgo-search
+google-generativeai>=0.8.5
+pillow
